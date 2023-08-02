@@ -1,0 +1,29 @@
+{
+  "name": "appwrite-faker",
+  "version": "1.0.0",
+  "description": "Generates an entire project of fake data for testing purposes for Appwrite",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "format": "npx eslint --fix ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PineappleIOnic/appwrite-faker.git"
+  },
+  "author": "Bradley Schofield (bradley@appwrite.io)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PineappleIOnic/appwrite-faker/issues"
+  },
+  "homepage": "https://github.com/PineappleIOnic/appwrite-faker#readme",
+  "dependencies": {
+    "@faker-js/faker": "^8.0.2",
+    "dotenv": "^16.3.1",
+    "inquirer": "^8.2.6",
+    "node-appwrite": "^9.0.0",
+    "progress": "^2.0.3"
+  }
+}
