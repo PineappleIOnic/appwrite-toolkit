@@ -74,13 +74,16 @@ async function generateDocuments (appwrite, collections) {
     for (let i = 0; i < Math.floor(Math.random() * 20); i += 1) {
       const type = faker.helpers.arrayElement(['string', 'numeric', 'boolean']) // TODO: Add more
 
-      let key = faker.random
-        .word()
+      let key = faker.word
+        .sample()
         .toLowerCase()
         .replace(/[^a-z0-9_]/g, '_')
       if (key.length > 36) {
         key = key.substring(0, 36)
       }
+
+      // Add a number to the end of the key
+      key = `${key}_${i}`
 
       const isRequired = faker.datatype.boolean()
 

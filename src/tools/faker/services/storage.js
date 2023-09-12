@@ -182,7 +182,7 @@ async function generateFiles(appwrite, buckets, useLFS) {
   ]);
 
   if (useLFS) {
-    console.log('LFs is not yet supported, falling back to regular files');
+    console.log('LFS is not yet supported, falling back to regular files');
   }
 
   const bar = new ProgressBar(

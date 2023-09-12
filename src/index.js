@@ -1,99 +1,68 @@
-const inquirer = require('inquirer')
-const fs = require('fs')
-const { Client } = require('node-appwrite')
-const { handleAuth } = require('./services/auth')
-const { handleDatabases } = require('./services/databases')
-const { handleStorage } = require('./services/storage')
-const { handleFunctions } = require('./services/functions')
-require('dotenv').config()
+const inquirer = require("inquirer");
+const figlet = require("figlet");
+require("dotenv").config();
 
-async function main () {
-  let questions = [
-    {
-      type: 'input',
-      name: 'appwriteEndpoint',
-      message: 'What is your Appwrite endpoint?',
-      default: process.env.APPWRITE_ENDPOINT ?? 'http://localhost/v1'
-    },
-    {
-      type: 'input',
-      name: 'appwriteKey',
-      message: 'What is your Appwrite API Key?'
-    },
-    {
-      type: 'input',
-      name: 'appwriteProjectID',
-      message: 'What is your Appwrite Project ID?'
+async function main() {
+  while (true) {
+    console.log(
+      "\n\n\n" +
+        figlet.textSync("Appwrite Toolkit", {
+          font: "Small",
+          horizontalLayout: "default",
+          verticalLayout: "default",
+        })
+    );
+
+    const { selectedTool } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "selectedTool",
+        message: "Which tool do you want to use?",
+        choices: [
+          {
+            name: "Generate Fake Data",
+            value: "faker",
+          },
+          {
+            name: "Bootstrap Appwrite Instance",
+            value: "bootstrap",
+          },
+          {
+            name: "Exit",
+            value: "exit",
+          },
+        ],
+      },
+    ]);
+
+    switch (selectedTool) {
+      case "faker":
+        const faker = require("./tools/faker/index");
+        await faker();
+        break;
+      case "bootstrap":
+        const bootstrap = require("./tools/bootstrap/index");
+        await bootstrap();
+        break;
+      case "exit":
+        process.exit(0);
+      default:
+        console.log("Invalid option");
+        break;
     }
-  ];
-  
-  if (process.env.APPWRITE_ENDPOINT) {
-    questions[0].default = process.env.APPWRITE_ENDPOINT
-  }
 
-  if (process.env.APPWRITE_API_KEY) {
-    questions[1].default = process.env.APPWRITE_API_KEY
-  }
+    const useAnotherTool = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "useAnotherTool",
+        message: "Do you want to use another tool?",
+      },
+    ]);
 
-  if (process.env.APPWRITE_PROJECT_ID) {
-    questions[2].default = process.env.APPWRITE_PROJECT_ID
-  }
-
-  const { appwriteEndpoint, appwriteKey, appwriteProjectID } = await inquirer.prompt(questions);
-
-  fs.writeFileSync('./.env', `APPWRITE_ENDPOINT=${appwriteEndpoint}\nAPPWRITE_API_KEY=${appwriteKey}\nAPPWRITE_PROJECT_ID=${appwriteProjectID}`)
-
-  const appwrite = new Client()
-  appwrite
-    .setEndpoint(appwriteEndpoint)
-    .setKey(appwriteKey)
-    .setProject(appwriteProjectID)
-
-  const { services } = await inquirer.prompt([
-    {
-      type: 'checkbox',
-      name: 'services',
-      message: 'Which services do you want to generate data for?',
-      choices: [
-        {
-          name: 'Auth',
-          value: 'auth'
-        },
-        {
-          name: 'Databases',
-          value: 'databases'
-        },
-        {
-          name: 'Storage',
-          value: 'storage'
-        },
-        {
-          name: 'Functions',
-          value: 'functions'
-        }
-      ]
+    if (!useAnotherTool.useAnotherTool) {
+      break;
     }
-  ])
-
-  // Auth
-  if (services.includes('auth')) {
-    await handleAuth(appwrite)
-  }
-
-  // Databases
-  if (services.includes('databases')) {
-    await handleDatabases(appwrite)
-  }
-
-  // Storage
-  if (services.includes('storage')) {
-    await handleStorage(appwrite)
-  }
-
-  // Functions
-  if (services.includes('functions')) {
-    await handleFunctions(appwrite)
   }
 }
 
-main()
+main();
