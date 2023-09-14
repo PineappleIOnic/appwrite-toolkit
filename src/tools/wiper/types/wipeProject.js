@@ -49,6 +49,10 @@ module.exports = async function () {
     ]);
 
     console.log("Are you 100% sure? This will delete the following project's resources (skipping API Keys):");
+    if (!selectedProjects.length) {
+        console.log("No project selected");
+        return;
+    }
     console.log(selectedProjects.map((project) => "• "+project).join("\n"));
 
     let { confirm } = await inquirer.prompt([

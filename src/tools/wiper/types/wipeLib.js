@@ -69,6 +69,12 @@ async function wipeResources(resources) {
     console.log(
         "Are you 100% sure? This will delete the following resources (skipping API Keys):"
     );
+
+    if (!selectedResources.length) {
+        console.log("No resources selected");
+        return;
+    }
+  
     console.log(
         selectedResources.map((resource) => "• " + resource).join("\n")
     );

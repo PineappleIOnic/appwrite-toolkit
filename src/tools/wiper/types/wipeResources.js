@@ -6,24 +6,6 @@ const { Client } = require("node-appwrite");
 inquirer.registerPrompt("tree", TreePrompt);
 
 /**
- *
- */
-
-class Resource {
-  name = "";
-  id = "";
-  onlyChildren = false;
-  decentants = [];
-
-  constructor(name, id, onlyChildren, decentants) {
-    this.name = name;
-    this.id = id;
-    this.onlyChildren = onlyChildren;
-    this.decentants = decentants;
-  }
-}
-
-/**
  * Wipe Resources
  *
  * @param {Array} resources
@@ -121,6 +103,10 @@ async function wipeResources() {
   console.log(
     "Are you 100% sure? This will delete the following resources (skipping API Keys):"
   );
+  if (!selectedResources.length) {
+    console.log("No resources selected");
+    return;
+}
   console.log(selectedResources.map((resource) => "• " + resource).join("\n"));
 
   let { confirm } = await inquirer.prompt([
@@ -185,7 +171,7 @@ async function wipeResources() {
           cookie: cookies,
         },
         body: JSON.stringify({
-          name: "Project 2 Key",
+          name: "Project Key",
           scopes: [
             "users.read",
             "users.write",
@@ -228,7 +214,7 @@ async function wipeResources() {
     let apiKey = await response.json();
     apiKey = apiKey.secret;
 
-    // Fetch All Users
+    // Wipe Authentication
     let appwrite = new Client();
     appwrite
         .setEndpoint(global.appwriteEndpoint)

@@ -19,10 +19,10 @@ module.exports = async function () {
           name: "Wipe Project",
           value: "project",
         },
-        {
-          name: "Wipe resources",
-          value: "resources",
-        },
+        // {
+        //   name: "Wipe resources",
+        //   value: "resources",
+        // },
       ],
     },
   ]);

@@ -24,6 +24,10 @@ module.exports = async function () {
     let projects = await response.json();
 
     console.log("Are you 100% sure? This will delete the following projects:");
+    if (!projects.projects.length) {
+        console.log("No projects found");
+        return;
+    }
     console.log(projects.projects.map((project) => "• "+project.name).join("\n"));
 
     let { confirm } = await inquirer.prompt([

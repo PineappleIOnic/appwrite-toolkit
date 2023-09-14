@@ -87,46 +87,54 @@ async function login(endpoint, email, password) {
     endpoint = global.appwriteEndpoint;
   }
 
-  if (!email && !password) {
-    let results = await inquirer.prompt([
-      {
-        type: "input",
-        name: "email",
-        message: "What is your email?",
-        default: "admin@test.com",
+  while (true) {
+    if (!email && !password) {
+      let results = await inquirer.prompt([
+        {
+          type: "input",
+          name: "email",
+          message: "What is your email?",
+          default: "admin@test.com",
+        },
+        {
+          type: "input",
+          name: "password",
+          message: "What is your password?",
+          default: "password",
+        },
+      ]);
+
+      email = results.email;
+      password = results.password;
+    }
+
+    let response = await fetch(endpoint + "/account/sessions/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-      {
-        type: "input",
-        name: "password",
-        message: "What is your password?",
-        default: "password",
-      },
-    ]);
+      body: JSON.stringify({
+        email: email,
+        password: password,
+      }),
+    });
 
-    email = results.email;
-    password = results.password;
+    if (!response.ok && response.status !== 403) {
+      console.error("Credentials are incorrect, please try again");
+      email = null;
+      password = null;
+    }
+
+    if (!response.ok && response.status !== 409) {
+      console.error("Failed to login to console");
+      console.error(await response.json());
+      return;
+    }
+
+    global.appwriteEndpoint = endpoint;
+    global.authCookies = response.headers.get("Set-Cookie");
+    return response.headers.get("Set-Cookie");
   }
-
-  let response = await fetch(endpoint + "/account/sessions/email", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: email,
-      password: password,
-    }),
-  });
-
-  if (!response.ok && response.status !== 409) {
-    console.log("Failed to login to console");
-    console.error(await response.json());
-    return;
-  }
-
-  global.appwriteEndpoint = endpoint;
-  global.authCookies = response.headers.get("Set-Cookie");
-  return response.headers.get("Set-Cookie");
 }
 
 async function createAdminCookies(endpoint, email, password) {
@@ -212,7 +220,7 @@ async function createAdminCookies(endpoint, email, password) {
     return;
   }
 
-  let response =  await fetch(endpoint + "/account/sessions/email", {
+  let response = await fetch(endpoint + "/account/sessions/email", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
