@@ -1,3 +1,5 @@
+#! /usr/bin/env node 
+
 const inquirer = require("inquirer");
 const figlet = require("figlet");
 require("dotenv").config();
@@ -28,6 +30,10 @@ async function main() {
             value: "bootstrap",
           },
           {
+            name: "Wipe Appwrite Data",
+            value: "wiper"
+          },
+          {
             name: "Exit",
             value: "exit",
           },
@@ -43,6 +49,10 @@ async function main() {
       case "bootstrap":
         const bootstrap = require("./tools/bootstrap/index");
         await bootstrap();
+        break;
+      case "wiper":
+        const wiper = require("./tools/wiper/index");
+        await wiper();
         break;
       case "exit":
         process.exit(0);

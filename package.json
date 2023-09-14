@@ -9,6 +9,12 @@
     "lint": "eslint .",
     "format": "npx eslint --fix ."
   },
+  "keywords": [
+    "cli"
+  ],
+  "bin": {
+    "appwrite-toolkit": "./src/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/PineappleIOnic/appwrite-faker.git"
@@ -24,6 +30,7 @@
     "dotenv": "^16.3.1",
     "figlet": "^1.6.0",
     "inquirer": "^8.2.6",
+    "inquirer-tree-prompt": "^1.1.2",
     "node-appwrite": "^9.0.0",
     "progress": "^2.0.3"
   }
