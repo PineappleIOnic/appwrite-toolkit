@@ -16,13 +16,19 @@ async function createAppwriteContext() {
     return appwrite;
   }
 
-  let { usePreviousConfig } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "usePreviousConfig",
-      message: "Do you want to use your previous configuration?",
-    },
-  ]);
+  let usePreviousConfig;
+  if (global.auto) {
+    usePreviousConfig = true;
+  } else {
+    usePreviousConfig = (await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "usePreviousConfig",
+        message: "Do you want to use your previous configuration?",
+        default: true
+      },
+    ])).usePreviousConfig;
+  }
 
   let appwriteEndpoint = process.env.APPWRITE_ENDPOINT;
   let appwriteKey = process.env.APPWRITE_API_KEY;
