@@ -10,68 +10,25 @@ async function handleStorage(appwrite) {
     return;
   }
 
-  const { useLFS } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "useLFS",
-      message:
-        "Would you like to use Large Files? (This will take significantly longer)",
-    },
-  ]);
-
-  if (useLFS) {
-    const { maxLFSFileSize } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "maxLFSFileSize",
-        message: "What is the maximum file size you would like to generate?",
-        choices: [
-          {
-            name: "1MB",
-            value: 1 * 1024 * 1024,
-          },
-          {
-            name: "5MB",
-            value: 5 * 1024 * 1024,
-          },
-          {
-            name: "10MB",
-            value: 10 * 1024 * 1024,
-          },
-          {
-            name: "50MB",
-            value: 50 * 1024 * 1024,
-          },
-          {
-            name: "100MB",
-            value: 100 * 1024 * 1024,
-          },
-          {
-            name: "500MB",
-            value: 500 * 1024 * 1024,
-          },
-          {
-            name: "1GB",
-            value: 1024 * 1024 * 1024,
-          },
-        ],
-      },
-    ]);
-  }
-
-  await generateFiles(appwrite, buckets, useLFS);
+  await generateFiles(appwrite, buckets);
 }
 
 async function generateBuckets(appwrite) {
   const storageClient = new Storage(appwrite);
 
-  const { bucketsNo } = await inquirer.prompt([
-    {
-      type: "number",
-      name: "bucketsNo",
-      message: "How many buckets would you like to generate?",
-    },
-  ]);
+  let bucketsNo;
+  if (global.auto) {
+    bucketsNo = 10
+  } else {
+    bucketsNo = (await inquirer.prompt([
+      {
+        type: "number",
+        name: "bucketsNo",
+        message: "How many buckets would you like to generate?",
+        default: 10
+      },
+    ])).bucketsNo;
+  }
 
   const buckets = [];
 
@@ -170,23 +127,25 @@ async function streamUploadFromURL(url, storageClient, bucketId) {
   return fileId;
 }
 
-async function generateFiles(appwrite, buckets, useLFS) {
+async function generateFiles(appwrite, buckets) {
   const storageClient = new Storage(appwrite);
 
-  const { filesNo } = await inquirer.prompt([
-    {
-      type: "number",
-      name: "filesNo",
-      message: "How many files would you like to generate per bucket?",
-    },
-  ]);
-
-  if (useLFS) {
-    console.log('LFS is not yet supported, falling back to regular files');
+  let filesNo;
+  if (global.auto) {
+    filesNo = 25;
+  } else {
+    filesNo = (await inquirer.prompt([
+      {
+        type: "number",
+        name: "filesNo",
+        message: "How many files would you like to generate per bucket?",
+        default: 25
+      },
+    ])).filesNo;
   }
 
   const bar = new ProgressBar(
-    "Uploading files (This may take a while) ... [:bar] :current/:total",
+    "Uploading files ... [:bar] :current/:total",
     {
       total: buckets.length * filesNo,
     }
@@ -196,7 +155,7 @@ async function generateFiles(appwrite, buckets, useLFS) {
     const bucket = buckets[i];
 
     for (let r = 0; r < filesNo; r += 1) {
-      const fileURL = useLFS ? getFakeLFSFileURL() : getFakeFileURL();
+      const fileURL = getFakeFileURL();
 
       await streamUploadFromURL(fileURL, storageClient, bucket.$id).then(
         (response) => {
@@ -205,11 +164,6 @@ async function generateFiles(appwrite, buckets, useLFS) {
       );
     }
   }
-}
-
-function getFakeLFSFileURL() {
-  //temp
-  return getFakeFileURL();
 }
 
 function getFakeFileURL() {

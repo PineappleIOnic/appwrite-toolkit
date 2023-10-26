@@ -9,31 +9,40 @@ require("dotenv").config();
 module.exports = async function () {
   let appwrite = await createAppwriteContext();
 
-  const { services } = await inquirer.prompt([
-    {
-      type: "checkbox",
-      name: "services",
-      message: "Which services do you want to generate data for?",
-      choices: [
-        {
-          name: "Auth",
-          value: "auth",
-        },
-        {
-          name: "Databases",
-          value: "databases",
-        },
-        {
-          name: "Storage",
-          value: "storage",
-        },
-        {
-          name: "Functions",
-          value: "functions",
-        },
-      ],
-    },
-  ]);
+  let services;
+  if(global.auto) {
+    services = [ "auth", "databases", "storage", "functions" ];
+  } else {
+    services = (await inquirer.prompt([
+      {
+        type: "checkbox",
+        name: "services",
+        message: "Which services do you want to generate data for?",
+        choices: [
+          {
+            name: "Auth",
+            value: "auth",
+            checked: true
+          },
+          {
+            name: "Databases",
+            value: "databases",
+            checked: true
+          },
+          {
+            name: "Storage",
+            value: "storage",
+            checked: true
+          },
+          {
+            name: "Functions",
+            value: "functions",
+            checked: true
+          },
+        ],
+      },
+    ])).services;
+  }
 
   // Auth
   if (services.includes("auth")) {

@@ -3,14 +3,22 @@ const inquirer = require('inquirer')
 const { Databases } = require('node-appwrite')
 const ProgressBar = require('progress')
 
-async function generateCollections (appwrite, databases) {
-  const { collectionsNo } = await inquirer.prompt([
-    {
-      type: 'number',
-      name: 'collectionsNo',
-      message: 'How many collections would you like to create per database?'
-    }
-  ])
+async function generateCollections(appwrite, databases) {
+  let collectionsNo;
+  if (global.auto) {
+    collectionsNo = 5;
+  } else {
+    collectionsNo = (await inquirer.prompt([
+      {
+        type: 'number',
+        name: 'collectionsNo',
+        message: 'How many collections would you like to create per database?',
+        default: 5
+      }
+    ])).collectionsNo;
+  }
+
+  const collections = []
 
   const databaseClient = new Databases(appwrite)
 
@@ -19,24 +27,25 @@ async function generateCollections (appwrite, databases) {
     { total: collectionsNo * databases.length }
   )
 
-  const promises = databases.flatMap((database) =>
-    Array.from({ length: collectionsNo }, () =>
-      databaseClient.createCollection(
-        database.$id,
+  for (let i = 0; i < databases.length; i += 1) {
+    for (let l = 0; l < collectionsNo; l += 1) {
+      await databaseClient.createCollection(
+        databases[i].$id,
         'unique()',
-                `${faker.word.adjective()} ${faker.word.noun()}`
-      )
-    )
-  )
+        `${faker.word.adjective()} ${faker.word.noun()}`
+      ).then((response) => {
+        collections.push(response)
+        bar.tick()
 
-  const collections = await Promise.all(promises)
+        return response
+      })
+    }
+  }
 
-  collections.flat().forEach(() => bar.tick())
-
-  return collections.flat()
+  return collections;
 }
 
-function generateFakeValue (type) {
+function generateFakeValue(type) {
   switch (type) {
     case 'string':
       return faker.lorem.word()
@@ -47,15 +56,21 @@ function generateFakeValue (type) {
   }
 }
 
-async function generateDocuments (appwrite, collections) {
-  const { documentsNo } = await inquirer.prompt([
-    {
-      type: 'number',
-      name: 'documentsNo',
-      message:
-        'How many documents would you like to generate per collection? (This will also generate attributes)'
-    }
-  ])
+async function generateDocuments(appwrite, collections) {
+  let documentsNo;
+  if (global.auto) {
+    documentsNo = 25;
+  } else {
+    documentsNo = (await inquirer.prompt([
+      {
+        type: 'number',
+        name: 'documentsNo',
+        message:
+          'How many documents would you like to generate per collection? (This will also generate attributes)',
+        default: 25,
+      }
+    ])).documentsNo;
+  }
 
   const databaseClient = new Databases(appwrite)
 
@@ -71,15 +86,15 @@ async function generateDocuments (appwrite, collections) {
     const collection = collections[s]
     const collectionSchema = []
 
-    for (let i = 0; i < Math.floor(Math.random() * 20); i += 1) {
+    for (let i = 0; i < Math.floor(Math.random() * 15) + 5; i += 1) {
       const type = faker.helpers.arrayElement(['string', 'numeric', 'boolean']) // TODO: Add more
 
       let key = faker.word
         .sample()
         .toLowerCase()
         .replace(/[^a-z0-9_]/g, '_')
-      if (key.length > 36) {
-        key = key.substring(0, 36)
+      if (key.length > 30) {
+        key = key.substring(0, 30)
       }
 
       // Add a number to the end of the key
@@ -133,10 +148,36 @@ async function generateDocuments (appwrite, collections) {
 
     bar.tick()
     schemas[collection.$id] = collectionSchema
-  }
 
-  console.log('Waiting a couple of seconds for attributes to be created...')
-  await new Promise((resolve) => setTimeout(resolve, 5000))
+    const expectAttributes = async (iteration = 1) => {
+      if (iteration > 15) {
+        return false;
+      }
+
+      const { attributes } = await databaseClient.listAttributes(
+        collection.databaseId,
+        collection.$id,
+        ['limit(100)']
+      );
+
+      const unreadyAttribute = attributes.find((attribute) => {
+        return attribute.status !== 'available';
+      });
+
+      if (unreadyAttribute) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return await expectAttributes(iteration + 1);
+      }
+
+      return true;
+    };
+
+    const success = await expectAttributes();
+
+    if (!success) {
+      throw new Error('Attributes were not created in time.');
+    }
+  }
 
   // Create Documents
   bar = new ProgressBar('Creating documents... [:bar] :current/:total', {
@@ -177,16 +218,22 @@ async function generateDocuments (appwrite, collections) {
   }
 }
 
-async function generateDatabase (appwrite) {
+async function generateDatabase(appwrite) {
   const databaseClient = new Databases(appwrite)
 
-  const { databaseNo } = await inquirer.prompt([
-    {
-      type: 'number',
-      name: 'databaseNo',
-      message: 'How many databases would you like to generate?'
-    }
-  ])
+  let databaseNo;
+  if (global.auto) {
+    databaseNo = 2;
+  } else {
+    databaseNo = (await inquirer.prompt([
+      {
+        type: 'number',
+        name: 'databaseNo',
+        message: 'How many databases would you like to generate?',
+        default: 2
+      }
+    ])).databaseNo;
+  }
 
   const databases = []
 
@@ -209,7 +256,7 @@ async function generateDatabase (appwrite) {
   return databases
 }
 
-async function handleDatabases (appwrite) {
+async function handleDatabases(appwrite) {
   const databases = await generateDatabase(appwrite)
 
   if (!databases.length) {

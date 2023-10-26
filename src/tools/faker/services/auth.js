@@ -6,7 +6,7 @@ const { faker } = require("@faker-js/faker");
 function appendRandomNumberToEmail(email) {
   const randomNumber = Math.floor(Math.random() * 1000000000000); // Generates a 12-digit random number
   const atIndex = email.indexOf('@');
-  
+
   if (atIndex !== -1) {
     const modifiedEmail = email.slice(0, atIndex) + randomNumber + email.slice(atIndex);
     return modifiedEmail;
@@ -19,13 +19,19 @@ function appendRandomNumberToEmail(email) {
 async function generateUsers(appwrite) {
   const userClient = new Users(appwrite);
 
-  const { usersNo } = await inquirer.prompt([
-    {
-      type: "number",
-      name: "usersNo",
-      message: "How many fake users would you like to generate?",
-    },
-  ]);
+  let usersNo;
+  if (global.auto) {
+    usersNo = 150;
+  } else {
+    usersNo = (await inquirer.prompt([
+      {
+        type: "number",
+        name: "usersNo",
+        message: "How many fake users would you like to generate?",
+        default: 150
+      },
+    ])).usersNo
+  };
 
   const users = [];
 
@@ -52,19 +58,19 @@ async function generateUsers(appwrite) {
 
     try {
       const appwriteUser = await userClient
-      .create(
-        "unique()",
-        appendRandomNumberToEmail(user.email),
-        user.phoneNumber || null,
-        user.password,
-        user.displayName
-      )
-      .then((response) => {
-        users.push(response);
-        bar.tick();
+        .create(
+          "unique()",
+          appendRandomNumberToEmail(user.email),
+          user.phoneNumber || null,
+          user.password,
+          user.displayName
+        )
+        .then((response) => {
+          users.push(response);
+          bar.tick();
 
-        return response;
-      });
+          return response;
+        });
 
       userClient.updateEmailVerification(appwriteUser.$id, user.emailVerified);
     } catch (error) {
@@ -75,10 +81,6 @@ async function generateUsers(appwrite) {
         throw error;
       }
     }
-
-    if (i % 100 === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // Give Appwrite a moment to catch up
-    }
   }
 
   return users;
@@ -87,22 +89,34 @@ async function generateUsers(appwrite) {
 async function generateTeams(appwrite, users) {
   const teamsClient = new Teams(appwrite);
 
-  const { teamsNo } = await inquirer.prompt([
-    {
-      type: "number",
-      name: "teamsNo",
-      message: "How many fake teams would you like to generate?",
-    },
-  ]);
+  let teamsNo;
+  if (global.auto) {
+    teamsNo = 100;
+  } else {
+    teamsNo = (await inquirer.prompt([
+      {
+        type: "number",
+        name: "teamsNo",
+        message: "How many fake teams would you like to generate?",
+        default: 100
+      },
+    ])).teamsNo;
+  }
 
   // Waiting for new SDK release
-  let { randomlyAssignUsers } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "randomlyAssignUsers",
-      message: "Would you like to randomly assign users to teams?",
-    },
-  ]);
+  let randomlyAssignUsers;
+  if (global.auto) {
+    randomlyAssignUsers = true;
+  } else {
+    randomlyAssignUsers = (await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "randomlyAssignUsers",
+        message: "Would you like to randomly assign users to teams?",
+        default: true
+      },
+    ])).randomlyAssignUsers;
+  }
 
   const teams = [];
 
@@ -129,7 +143,7 @@ async function generateTeams(appwrite, users) {
       const team = teams[Math.floor(Math.random() * teams.length)];
 
       await teamsClient
-        .createMembership(team.$id, ["owner"], undefined, undefined, user.$id)
+        .createMembership(team.$id, ["owner"], undefined, user.$id)
         .then(() => {
           bar.tick();
         });

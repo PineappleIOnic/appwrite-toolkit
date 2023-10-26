@@ -5,6 +5,15 @@ const figlet = require("figlet");
 require("dotenv").config();
 
 async function main() {
+  const action = process.argv[2] ?? '';
+
+  if(action === 'faker-auto') {
+    global.auto = true;
+    const faker = require("./tools/faker/index");
+    await faker();
+    return;
+  }
+
   while (true) {
     console.log(
       "\n\n\n" +
@@ -66,6 +75,7 @@ async function main() {
         type: "confirm",
         name: "useAnotherTool",
         message: "Do you want to use another tool?",
+        default: false
       },
     ]);
 
