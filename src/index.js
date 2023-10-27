@@ -7,7 +7,7 @@ require("dotenv").config();
 
 const Faker = require("./tools/faker/index");
 const Bootstrap = require("./tools/bootstrap/index");
-const Wiper = require("./tools/Wiper/index");
+const Wiper = require("./tools/wiper/index");
 
 const tools = [Faker, Bootstrap, Wiper];
 
@@ -36,8 +36,8 @@ async function main() {
     program
       .command(tool.value)
       .description(tool.name)
-      .action((...args) => {
-        tool.action(...args);
+      .action(async (options) => {
+        await tool.action(options);
       });
   });
 
@@ -86,7 +86,7 @@ async function wizard(options) {
       for (let i = 0; i < tools.length; i++) {
         tool = tools[i];
         if (tools[i].value === selectedTool) {
-          await tools[i].action();
+          await tools[i].action(options);
         }
       }
     }

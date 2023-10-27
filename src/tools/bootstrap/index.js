@@ -1,6 +1,7 @@
 const inquirer = require("inquirer");
 const fs = require("fs");
 const { createAdminCookies } = require("../../utils/getAppwrite");
+const ProgressBar = require("progress");
 
 let cookieJar = {};
 
@@ -14,10 +15,10 @@ module.exports = {
       desc: "Number of projects to generate",
     },
   ],
-  args: []
+  args: [],
 };
 
-module.exports.action = async function () {
+module.exports.action = async function (options) {
   process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
   const { useDefaults } = await inquirer.prompt([
@@ -104,103 +105,94 @@ module.exports.action = async function () {
   }
 
   // Create Project
-  response = await fetch(config.endpoint + "/projects", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      cookie: cookieJar.console,
-    },
-    body: JSON.stringify({
-      projectId: config.projectId,
-      name: config.projectName,
-      teamId: config.teamId,
-      region: "default",
-    }),
-  });
+  let progressbar = new ProgressBar(
+    "Creating projects [:bar] :current/:total :percent :etas",
+    { total: parseInt(options.projects) ?? 1 }
+  );
 
-  if (!response.ok && response.status !== 409) {
-    console.log("Failed to create project");
-    console.error(await response.json());
-    return;
+  let projects = [];
+  for (let i = 0; i < options.projects; i++) {
+    progressbar.tick();
+    let project = await createProject(
+      config.endpoint,
+      "unique()",
+      config.projectName + " " + i,
+      config.teamId
+    );
+
+    projects.push(project);
   }
 
-  // Create API Key
-  response = await fetch(config.endpoint + "/projects/test/keys", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      cookie: cookieJar.console,
-    },
-    body: JSON.stringify({
-      name: "Project Key",
-      scopes: [
-        "users.read",
-        "users.write",
-        "teams.read",
-        "teams.write",
-        "databases.read",
-        "databases.write",
-        "collections.read",
-        "collections.write",
-        "attributes.read",
-        "attributes.write",
-        "indexes.read",
-        "indexes.write",
-        "documents.read",
-        "documents.write",
-        "files.read",
-        "files.write",
-        "buckets.read",
-        "buckets.write",
-        "functions.read",
-        "functions.write",
-        "execution.read",
-        "execution.write",
-        "locale.read",
-        "avatars.read",
-        "health.read",
-        "migrations.read",
-        "migrations.write",
-      ],
-    }),
+  // Create API Key for each project
+  projects.forEach(async (project, index) => {
+    let response = await fetch(
+      config.endpoint + "/projects/" + project['$id']+ "/keys",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: cookieJar.console,
+        },
+        body: JSON.stringify({
+          name: "Project Key",
+          scopes: [
+            "users.read",
+            "users.write",
+            "teams.read",
+            "teams.write",
+            "databases.read",
+            "databases.write",
+            "collections.read",
+            "collections.write",
+            "attributes.read",
+            "attributes.write",
+            "indexes.read",
+            "indexes.write",
+            "documents.read",
+            "documents.write",
+            "files.read",
+            "files.write",
+            "buckets.read",
+            "buckets.write",
+            "functions.read",
+            "functions.write",
+            "execution.read",
+            "execution.write",
+            "locale.read",
+            "avatars.read",
+            "health.read",
+            "migrations.read",
+            "migrations.write",
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok && response.status !== 409) {
+      console.log("Failed to create API Key");
+      console.error(await response.json());
+      return;
+    }
+
+    let body = await response.json();
+
+    projects[index].apiKey = body.secret;
   });
 
-  if (!response.ok && response.status !== 409) {
-    console.log("Failed to create API Key");
-    console.error(await response.json());
-    return;
-  }
-
-  let body = await response.json();
-
-  console.log("Successfully bootstrapped Appwrite instance");
-  console.table({
-    Email: config.email,
-    Password: config.password,
-    "Project ID": config.projectId,
-    "---------------": "---------------",
-    Endpoint: config.endpoint,
-    "API Key": body.secret,
-  });
+  console.log("Successfully bootstrapped Appwrite instances");
 
   const { shouldSaveConfig } = await inquirer.prompt([
     {
       type: "confirm",
       name: "shouldSaveConfig",
-      message: "Do you want to save the credentials to .env?",
+      message: "Do you want to save the credentials to json file?",
       default: true,
     },
   ]);
 
   if (shouldSaveConfig) {
-    fs.writeFileSync(
-      "./.env",
-      `APPWRITE_ENDPOINT=${config.endpoint}\nAPPWRITE_API_KEY=${body.secret}\nAPPWRITE_PROJECT_ID=${config.projectId}`
-    );
-
-    global.appwriteEndpoint = config.endpoint;
-    global.appwriteKey = body.secret;
-    global.appwriteProjectID = config.projectId;
+    fs.writeFileSync('./projects.json', JSON.stringify(projects, null, 2));
+    global.activeProjects = projects;
   }
 };
 
@@ -257,4 +249,34 @@ async function createCustomConfig() {
   ];
 
   return await inquirer.prompt(questions);
+}
+
+async function createProject(
+  endpoint,
+  projectId,
+  projectName,
+  teamId = "Personal"
+) {
+  response = await fetch(endpoint + "/projects", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      cookie: cookieJar.console,
+    },
+    body: JSON.stringify({
+      projectId: projectId,
+      name: projectName,
+      teamId: teamId,
+      region: "default",
+    }),
+  });
+
+  if (!response.ok && response.status !== 409) {
+    console.log("Failed to create project");
+    console.error(await response.json());
+    return;
+  }
+
+  let project = await response.json();
+  return project;
 }

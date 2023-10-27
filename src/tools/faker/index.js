@@ -25,8 +25,10 @@ module.exports = {
   ]
 };
 
-module.exports.action = async function () {
+module.exports.action = async function (options) {
   let appwrite = await createAppwriteContext();
+
+  let numberOfProjects = options.projects ?? 1;
 
   let services;
   if (global.auto) {
