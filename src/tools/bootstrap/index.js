@@ -4,7 +4,20 @@ const { createAdminCookies } = require("../../utils/getAppwrite");
 
 let cookieJar = {};
 
-module.exports = async function () {
+module.exports = {
+  name: "Bootstrap Appwrite",
+  value: "bootstrap",
+  variables: [
+    {
+      name: "projects",
+      shorthand: "p",
+      desc: "Number of projects to generate",
+    },
+  ],
+  args: []
+};
+
+module.exports.action = async function () {
   process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
   const { useDefaults } = await inquirer.prompt([

@@ -32,6 +32,7 @@
   "homepage": "https://github.com/PineappleIOnic/appwrite-toolkit#readme",
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
+    "commander": "^11.1.0",
     "dotenv": "^16.3.1",
     "figlet": "^1.6.0",
     "inquirer": "^8.2.6",

@@ -1,47 +1,76 @@
-#! /usr/bin/env node 
+#! /usr/bin/env node
 
 const inquirer = require("inquirer");
 const figlet = require("figlet");
+const { Command, Option, Argument } = require("commander");
 require("dotenv").config();
 
-async function main() {
-  const action = process.argv[2] ?? '';
+const Faker = require("./tools/faker/index");
+const Bootstrap = require("./tools/bootstrap/index");
+const Wiper = require("./tools/Wiper/index");
 
-  if(action === 'faker-auto') {
-    global.auto = true;
-    const faker = require("./tools/faker/index");
-    await faker();
+const tools = [Faker, Bootstrap, Wiper];
+
+async function main() {
+  const program = new Command();
+
+  await program
+    .version("0.0.1", "-v, --version", "output the current version")
+    .addHelpText(
+      "before",
+      figlet.textSync("Appwrite Toolkit", {
+        font: "Small",
+        horizontalLayout: "default",
+        verticalLayout: "default",
+      })
+    )
+    .helpOption("-h, --help", "display help")
+    .option("-d, --debug", "output extra debugging")
+    .addOption(new Option('-p, --projects <number>', 'amount of projects to create'))
+    .description("A suite of tools to aid in the development of Appwrite.")
+    .action(async (options) => {
+      await wizard(options);
+    });;
+
+  tools.forEach((tool) => {
+    program
+      .command(tool.value)
+      .description(tool.name)
+      .action((...args) => {
+        tool.action(...args);
+      });
+  });
+
+  program.parse(process.argv);
+
+  const options = program.opts();
+  if (options.debug) console.log(options);
+}
+
+async function wizard(options) {
+  console.log(figlet.textSync("Appwrite Toolkit", {
+    font: "Small",
+    horizontalLayout: "default",
+    verticalLayout: "default",
+  }) + '\n');
+
+  if (options.projects && !Number.isInteger(parseInt(options.projects))) {
+    console.log("Error: Projects must be an integer!");
     return;
   }
 
-  while (true) {
-    console.log(
-      "\n\n\n" +
-        figlet.textSync("Appwrite Toolkit", {
-          font: "Small",
-          horizontalLayout: "default",
-          verticalLayout: "default",
-        })
-    );
+  if (options.projects > 1) {
+    console.log(`Warning: Creating ${options.projects} projects!`);
+  }
 
+  while (true) {
     const { selectedTool } = await inquirer.prompt([
       {
         type: "list",
         name: "selectedTool",
         message: "Which tool do you want to use?",
         choices: [
-          {
-            name: "Generate Fake Data",
-            value: "faker",
-          },
-          {
-            name: "Bootstrap Appwrite Instance",
-            value: "bootstrap",
-          },
-          {
-            name: "Wipe Appwrite Data",
-            value: "wiper"
-          },
+          ...tools,
           {
             name: "Exit",
             value: "exit",
@@ -50,24 +79,16 @@ async function main() {
       },
     ]);
 
-    switch (selectedTool) {
-      case "faker":
-        const faker = require("./tools/faker/index");
-        await faker();
-        break;
-      case "bootstrap":
-        const bootstrap = require("./tools/bootstrap/index");
-        await bootstrap();
-        break;
-      case "wiper":
-        const wiper = require("./tools/wiper/index");
-        await wiper();
-        break;
-      case "exit":
-        process.exit(0);
-      default:
-        console.log("Invalid option");
-        break;
+    // Find function from selectTool
+    if (selectedTool === "exit") {
+      break;
+    } else {
+      for (let i = 0; i < tools.length; i++) {
+        tool = tools[i];
+        if (tools[i].value === selectedTool) {
+          await tools[i].action();
+        }
+      }
     }
 
     const useAnotherTool = await inquirer.prompt([
@@ -75,7 +96,7 @@ async function main() {
         type: "confirm",
         name: "useAnotherTool",
         message: "Do you want to use another tool?",
-        default: false
+        default: false,
       },
     ]);
 
