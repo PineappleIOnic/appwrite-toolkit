@@ -124,9 +124,11 @@ module.exports.action = async function (options) {
   }
 
   // Create API Key for each project
-  projects.forEach(async (project, index) => {
+  for (i = 0; i < projects.length; i++) {
+    let project = projects[i];
+
     let response = await fetch(
-      config.endpoint + "/projects/" + project['$id']+ "/keys",
+      config.endpoint + "/projects/" + project["$id"] + "/keys",
       {
         method: "POST",
         headers: {
@@ -163,6 +165,8 @@ module.exports.action = async function (options) {
             "health.read",
             "migrations.read",
             "migrations.write",
+            "rules.read",
+            "rules.write"
           ],
         }),
       }
@@ -177,7 +181,7 @@ module.exports.action = async function (options) {
     let body = await response.json();
 
     projects[index].apiKey = body.secret;
-  });
+  }
 
   console.log("Successfully bootstrapped Appwrite instances");
 
@@ -191,7 +195,7 @@ module.exports.action = async function (options) {
   ]);
 
   if (shouldSaveConfig) {
-    fs.writeFileSync('./projects.json', JSON.stringify(projects, null, 2));
+    fs.writeFileSync("./projects.json", JSON.stringify(projects, null, 2));
     global.activeProjects = projects;
   }
 };
@@ -255,7 +259,7 @@ async function createProject(
   endpoint,
   projectId,
   projectName,
-  teamId = "Personal"
+  teamId = "personal"
 ) {
   response = await fetch(endpoint + "/projects", {
     method: "POST",

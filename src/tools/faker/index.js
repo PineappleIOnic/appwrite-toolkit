@@ -28,8 +28,6 @@ module.exports = {
 module.exports.action = async function (options) {
   let appwrite = await createAppwriteContext();
 
-  let numberOfProjects = options.projects ?? 1;
-
   let services;
   if (global.auto) {
     services = ["auth", "databases", "storage", "functions"];
@@ -67,23 +65,25 @@ module.exports.action = async function (options) {
     ).services;
   }
 
+  let projects = global.projects ?? [];
+
   // Auth
   if (services.includes("auth")) {
-    await handleAuth(appwrite);
+    await handleAuth(appwrite, projects);
   }
 
   // Databases
   if (services.includes("databases")) {
-    await handleDatabases(appwrite);
+    await handleDatabases(appwrite, projects);
   }
 
   // Storage
   if (services.includes("storage")) {
-    await handleStorage(appwrite);
+    await handleStorage(appwrite, projects);
   }
 
   // Functions
   if (services.includes("functions")) {
-    await handleFunctions(appwrite);
+    await handleFunctions(appwrite, projects);
   }
 };

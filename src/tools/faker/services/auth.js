@@ -16,7 +16,7 @@ function appendRandomNumberToEmail(email) {
   }
 }
 
-async function generateUsers(appwrite) {
+async function generateUsers(appwrite, projects) {
   const userClient = new Users(appwrite);
 
   let usersNo;
@@ -27,7 +27,7 @@ async function generateUsers(appwrite) {
       {
         type: "number",
         name: "usersNo",
-        message: "How many fake users would you like to generate?",
+        message: "How many fake users would you like to generate " + (projects.length > 1) ? 'per project' :  '' + "?",
         default: 150
       },
     ])).usersNo
@@ -155,14 +155,14 @@ async function generateTeams(appwrite, users) {
   return teams;
 }
 
-async function handleAuth(appwrite) {
-  const users = await generateUsers(appwrite);
+async function handleAuth(appwrite, projects) {
+  const users = await generateUsers(appwrite, projects);
 
   if (!users.length) {
     return {};
   }
 
-  const teams = await generateTeams(appwrite, users);
+  const teams = await generateTeams(appwrite, users, projects);
 
   return { users, teams };
 }
