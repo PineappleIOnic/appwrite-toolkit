@@ -257,19 +257,19 @@ async function generateDatabase(appwrite) {
 }
 
 async function handleDatabases(appwrite) {
-  const databases = await generateDatabase(appwrite, projects)
+  const databases = await generateDatabase(appwrite)
 
   if (!databases.length) {
     return
   }
 
-  const collections = await generateCollections(appwrite, databases, projects)
+  const collections = await generateCollections(appwrite, databases)
 
   if (!collections.length) {
     return
   }
 
-  await generateDocuments(appwrite, collections, projects)
+  await generateDocuments(appwrite, collections)
 }
 
 module.exports = {

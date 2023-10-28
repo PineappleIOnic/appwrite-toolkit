@@ -16,16 +16,14 @@ async function handleStorage(appwrite) {
 async function generateBuckets(appwrite) {
   const storageClient = new Storage(appwrite);
 
-  let bucketsNo;
-  if (global.auto) {
-    bucketsNo = 10
-  } else {
+  let bucketsNo = 5;
+  if (!global.auto) {
     bucketsNo = (await inquirer.prompt([
       {
         type: "number",
         name: "bucketsNo",
         message: "How many buckets would you like to generate?",
-        default: 10
+        default: 5
       },
     ])).bucketsNo;
   }
@@ -130,16 +128,14 @@ async function streamUploadFromURL(url, storageClient, bucketId) {
 async function generateFiles(appwrite, buckets) {
   const storageClient = new Storage(appwrite);
 
-  let filesNo;
-  if (global.auto) {
-    filesNo = 25;
-  } else {
+  let filesNo = 5;
+  if (!global.auto) {
     filesNo = (await inquirer.prompt([
       {
         type: "number",
         name: "filesNo",
         message: "How many files would you like to generate per bucket?",
-        default: 25
+        default: 5
       },
     ])).filesNo;
   }

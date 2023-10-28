@@ -3,98 +3,29 @@ const fs = require("fs");
 const { createAdminCookies } = require("../../utils/getAppwrite");
 const ProgressBar = require("progress");
 
-let cookieJar = {};
-
 module.exports = {
   name: "Bootstrap Appwrite",
   value: "bootstrap",
-  variables: [
-    {
-      name: "projects",
-      shorthand: "p",
-      desc: "Number of projects to generate",
-    },
-  ],
-  args: [],
+  requiredOptions: [
+    [ "--amount <amount>", "amount of projects to bootstrap" ]
+  ]
 };
 
 module.exports.action = async function (options) {
   process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
-  const { useDefaults } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "useDefaults",
-      message: "Do you want to use the default configuration?",
-      default: true,
-    },
-  ]);
-
-  let accountExists = true;
-
-  let config = {
-    endpoint: "http://localhost/v1",
-    email: "admin@test.com",
-    password: "password",
-    username: "Admin",
-    teamId: "test",
-    teamName: "Test Team",
-    projectId: "test",
-    projectName: "Test Project",
-  };
-
-  try {
-    cookieJar.console = await createAdminCookies(
-      config.endpoint,
-      config.email,
-      config.password
-    );
-  } catch (exception) {
-    console.log(exception);
-    accountExists = false;
-  }
-
-  if (!useDefaults) {
-    config = await createCustomConfig();
-  }
-
-  if (!accountExists) {
-    let response = await fetch(config.endpoint + "/account", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: "admin",
-        email: config.email,
-        password: config.password,
-        name: config.username,
-      }),
-    });
-
-    if (!response.ok && response.status !== 409) {
-      console.log("Failed to create console account");
-      console.error(await response.json());
-      return;
-    }
-
-    cookieJar.console = await createAdminCookies(
-      config.endpoint,
-      config.email,
-      config.password
-    );
-  }
+  await createAdminCookies();
 
   // Create Team
-  response = await fetch(config.endpoint + "/teams", {
+  response = await fetch(global.appwriteEndpoint + "/teams", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      cookie: cookieJar.console,
+      cookie: global.authCookies,
     },
     body: JSON.stringify({
-      teamId: config.teamId,
-      name: config.teamName,
+      teamId: 'toolkit-projects',
+      name: 'Toolkit Projects',
     }),
   });
 
@@ -107,17 +38,17 @@ module.exports.action = async function (options) {
   // Create Project
   let progressbar = new ProgressBar(
     "Creating projects [:bar] :current/:total :percent :etas",
-    { total: parseInt(options.projects) ?? 1 }
+    { total: parseInt(options.amount) ?? 1 }
   );
 
   let projects = [];
-  for (let i = 0; i < options.projects; i++) {
+  for (let i = 0; i < options.amount; i++) {
     progressbar.tick();
     let project = await createProject(
-      config.endpoint,
+      global.appwriteEndpoint,
       "unique()",
-      config.projectName + " " + i,
-      config.teamId
+      "Toolkit Project " + i,
+      'toolkit-projects'
     );
 
     projects.push(project);
@@ -128,15 +59,15 @@ module.exports.action = async function (options) {
     let project = projects[i];
 
     let response = await fetch(
-      config.endpoint + "/projects/" + project["$id"] + "/keys",
+      global.appwriteEndpoint + "/projects/" + project.$id + "/keys",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          cookie: cookieJar.console,
+          cookie: global.authCookies,
         },
         body: JSON.stringify({
-          name: "Project Key",
+          name: "Toolkit Key",
           scopes: [
             "users.read",
             "users.write",
@@ -172,7 +103,7 @@ module.exports.action = async function (options) {
       }
     );
 
-    if (!response.ok && response.status !== 409) {
+    if (!response.ok) {
       console.log("Failed to create API Key");
       console.error(await response.json());
       return;
@@ -180,92 +111,30 @@ module.exports.action = async function (options) {
 
     let body = await response.json();
 
-    projects[index].apiKey = body.secret;
+    projects[i].apiKey = body.secret;
   }
 
-  console.log("Successfully bootstrapped Appwrite instances");
+  console.log("Successfully bootstrapped Appwrite projects");
 
-  const { shouldSaveConfig } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "shouldSaveConfig",
-      message: "Do you want to save the credentials to json file?",
-      default: true,
-    },
-  ]);
-
-  if (shouldSaveConfig) {
-    fs.writeFileSync("./projects.json", JSON.stringify(projects, null, 2));
-    global.activeProjects = projects;
-  }
+  fs.writeFileSync("./projects.json", JSON.stringify(projects.map((project) => {
+    return {
+      $id: project.$id,
+      apiKey: project.apiKey
+    }
+  }), null, 2));
 };
-
-async function createCustomConfig() {
-  let questions = [
-    {
-      type: "input",
-      name: "endpoint",
-      message: "What is your Appwrite endpoint?",
-      default: process.env.APPWRITE_ENDPOINT ?? "http://localhost/v1",
-    },
-    {
-      type: "input",
-      name: "email",
-      message: "What email do you want?",
-      default: "admin@test.com",
-    },
-    {
-      type: "input",
-      name: "password",
-      message: "What password do you want?",
-      default: "password",
-    },
-    {
-      type: "input",
-      name: "username",
-      message: "What username do you want?",
-      default: "Admin",
-    },
-    {
-      type: "input",
-      name: "teamId",
-      message: "What TeamID do you want?",
-      default: "test",
-    },
-    {
-      type: "input",
-      name: "teamName",
-      message: "What Team Name do you want?",
-      default: "Test Team",
-    },
-    {
-      type: "input",
-      name: "projectId",
-      message: "What ProjectID do you want?",
-      default: "test",
-    },
-    {
-      type: "input",
-      name: "projectName",
-      message: "What is your project name?",
-      default: "Test Project",
-    },
-  ];
-
-  return await inquirer.prompt(questions);
-}
 
 async function createProject(
   endpoint,
   projectId,
   projectName,
-  teamId = "personal"
+  teamId
 ) {
   response = await fetch(endpoint + "/projects", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      cookie: cookieJar.console,
+      cookie: global.authCookies,
     },
     body: JSON.stringify({
       projectId: projectId,
@@ -275,7 +144,7 @@ async function createProject(
     }),
   });
 
-  if (!response.ok && response.status !== 409) {
+  if (!response.ok) {
     console.log("Failed to create project");
     console.error(await response.json());
     return;

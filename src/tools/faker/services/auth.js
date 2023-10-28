@@ -16,19 +16,17 @@ function appendRandomNumberToEmail(email) {
   }
 }
 
-async function generateUsers(appwrite, projects) {
+async function generateUsers(appwrite) {
   const userClient = new Users(appwrite);
 
-  let usersNo;
-  if (global.auto) {
-    usersNo = 150;
-  } else {
+  let usersNo = 50;
+  if (!global.auto) {
     usersNo = (await inquirer.prompt([
       {
         type: "number",
         name: "usersNo",
-        message: "How many fake users would you like to generate " + (projects.length > 1) ? 'per project' :  '' + "?",
-        default: 150
+        message: "How many fake users would you like to generate?",
+        default: 50
       },
     ])).usersNo
   };
@@ -155,14 +153,14 @@ async function generateTeams(appwrite, users) {
   return teams;
 }
 
-async function handleAuth(appwrite, projects) {
-  const users = await generateUsers(appwrite, projects);
+async function handleAuth(appwrite) {
+  const users = await generateUsers(appwrite);
 
   if (!users.length) {
     return {};
   }
 
-  const teams = await generateTeams(appwrite, users, projects);
+  const teams = await generateTeams(appwrite, users);
 
   return { users, teams };
 }
