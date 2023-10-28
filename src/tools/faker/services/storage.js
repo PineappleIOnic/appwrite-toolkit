@@ -30,8 +30,7 @@ async function generateBuckets(appwrite) {
 
   const buckets = [];
 
-  const bar = new ProgressBar(
-    "Creating new buckets... [:bar] :current/:total",
+  const bar = new ProgressBar("Creating new buckets... [:bar] :current/:total :percent :etas",
     {
       total: bucketsNo,
     }
@@ -140,8 +139,7 @@ async function generateFiles(appwrite, buckets) {
     ])).filesNo;
   }
 
-  const bar = new ProgressBar(
-    "Uploading files ... [:bar] :current/:total",
+  const bar = new ProgressBar("Uploading files ... [:bar] :current/:total :percent :etas",
     {
       total: buckets.length * filesNo,
     }

@@ -120,8 +120,7 @@ async function generateFunctions(appwrite) {
   }
 
   const functions = [];
-  const bar = new ProgressBar(
-    "Creating new functions... [:bar] :current/:total",
+  const bar = new ProgressBar("Creating new functions... [:bar] :current/:total :percent :etas",
     {
       total: functionsNo,
     }
@@ -198,8 +197,7 @@ async function generateDeployments(appwrite, functions) {
     zippedRuntimes.push(runtime);
   }
 
-  const bar = new ProgressBar(
-    "Creating new deployments... [:bar] :current/:total",
+  const bar = new ProgressBar("Creating new deployments... [:bar] :current/:total :percent :etas",
     {
       total: functions.length * deploymentsNo,
     }

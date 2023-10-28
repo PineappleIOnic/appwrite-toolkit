@@ -36,8 +36,7 @@ module.exports.action = async function (options) {
   }
 
   // Create Project
-  let progressbar = new ProgressBar(
-    "Creating projects [:bar] :current/:total :percent :etas",
+  let progressbar = new ProgressBar("Creating projects [:bar] :current/:total :percent :etas",
     { total: parseInt(options.amount) ?? 1 }
   );
 
