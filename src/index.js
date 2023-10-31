@@ -2,7 +2,7 @@
 
 const inquirer = require("inquirer");
 const figlet = require("figlet");
-const { Command, Option, Argument } = require("commander");
+const { Command } = require("commander");
 require("dotenv").config();
 
 const Faker = require("./tools/faker/index");
@@ -24,21 +24,36 @@ async function main() {
         verticalLayout: "default",
       })
     )
-    .helpOption("-h, --help", "display help")
-    .option("-d, --debug", "output extra debugging")
-    .addOption(new Option('-p, --projects <number>', 'amount of projects to create'))
     .description("A suite of tools to aid in the development of Appwrite.")
-    .action(async (options) => {
+    .helpOption("-h, --help", "display help")
+    .option("--debug", "output extra debugging")
+    .option("--auto", "auto-pick default values")
+    .option("--endpoint <endpoint>", "Appwrit eendpoint", "https://cloud.appwrite.io/v1")
+    .on("option:auto", () => {
+      global.auto = true;
+    })
+    .on("option:debug", () => {
+      global.debug = true;
+    })
+    .on("option:endpoint", (endpoint) => {
+      global.appwriteEndpoint = endpoint;
+    })
+    .action(async (str, options) => {
       await wizard(options);
-    });;
+    });
 
   tools.forEach((tool) => {
-    program
-      .command(tool.value)
-      .description(tool.name)
-      .action(async (options) => {
-        await tool.action(options);
-      });
+    let command = new Command(tool.value).description(tool.name);
+
+    for (const requiredOption of (tool.requiredOptions ?? [])) {
+      command = command.requiredOption(...requiredOption);
+    }
+
+    command = command.action(async (options) => {
+      await tool.action(options);
+    });
+
+    program.addCommand(command);
   });
 
   program.parse(process.argv);

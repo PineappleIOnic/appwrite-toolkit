@@ -22,8 +22,7 @@ async function generateCollections(appwrite, databases) {
 
   const databaseClient = new Databases(appwrite)
 
-  const bar = new ProgressBar(
-    'Creating new collections... [:bar] :current/:total',
+  const bar = new ProgressBar('Creating new collections... [:bar] :current/:total :percent :etas',
     { total: collectionsNo * databases.length }
   )
 
@@ -75,7 +74,7 @@ async function generateDocuments(appwrite, collections) {
   const databaseClient = new Databases(appwrite)
 
   // Create Attributes
-  let bar = new ProgressBar('Creating attributes... [:bar] :current/:total', {
+  let bar = new ProgressBar('Creating attributes... [:bar] :current/:total :percent :etas', {
     total: collections.length
   })
 
@@ -180,7 +179,7 @@ async function generateDocuments(appwrite, collections) {
   }
 
   // Create Documents
-  bar = new ProgressBar('Creating documents... [:bar] :current/:total', {
+  bar = new ProgressBar('Creating documents... [:bar] :current/:total :percent :etas', {
     total: collections.length * documentsNo
   })
 
@@ -237,8 +236,7 @@ async function generateDatabase(appwrite) {
 
   const databases = []
 
-  const bar = new ProgressBar(
-    'Creating new databases... [:bar] :current/:total',
+  const bar = new ProgressBar('Creating new databases... [:bar] :current/:total :percent :etas',
     { total: databaseNo }
   )
 
@@ -257,19 +255,19 @@ async function generateDatabase(appwrite) {
 }
 
 async function handleDatabases(appwrite) {
-  const databases = await generateDatabase(appwrite, projects)
+  const databases = await generateDatabase(appwrite)
 
   if (!databases.length) {
     return
   }
 
-  const collections = await generateCollections(appwrite, databases, projects)
+  const collections = await generateCollections(appwrite, databases)
 
   if (!collections.length) {
     return
   }
 
-  await generateDocuments(appwrite, collections, projects)
+  await generateDocuments(appwrite, collections)
 }
 
 module.exports = {
