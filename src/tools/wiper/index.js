@@ -4,7 +4,14 @@ const wipeAll = require("./types/wipeAll");
 const wipeProject = require("./types/wipeProject");
 const wipeResources = require("./types/wipeResources");
 
-module.exports = async function () {
+module.exports = {
+  name: "Wipe Data",
+  value: "wipe",
+  variables: [],
+  args: [],
+};
+
+module.exports.action = async function (options) {
   let { wipeMode } = await inquirer.prompt([
     {
       type: "list",

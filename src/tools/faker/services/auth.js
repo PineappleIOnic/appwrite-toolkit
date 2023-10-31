@@ -19,23 +19,21 @@ function appendRandomNumberToEmail(email) {
 async function generateUsers(appwrite) {
   const userClient = new Users(appwrite);
 
-  let usersNo;
-  if (global.auto) {
-    usersNo = 150;
-  } else {
+  let usersNo = 50;
+  if (!global.auto) {
     usersNo = (await inquirer.prompt([
       {
         type: "number",
         name: "usersNo",
         message: "How many fake users would you like to generate?",
-        default: 150
+        default: 50
       },
     ])).usersNo
   };
 
   const users = [];
 
-  const bar = new ProgressBar("Creating new users... [:bar] :current/:total", {
+  const bar = new ProgressBar("Creating new users... [:bar] :current/:total :percent :etas", {
     total: usersNo,
   });
 
@@ -120,7 +118,7 @@ async function generateTeams(appwrite, users) {
 
   const teams = [];
 
-  let bar = new ProgressBar("Creating new teams... [:bar] :current/:total", {
+  let bar = new ProgressBar("Creating new teams... [:bar] :current/:total :percent :etas", {
     total: teamsNo,
   });
 
@@ -134,8 +132,7 @@ async function generateTeams(appwrite, users) {
   }
 
   if (randomlyAssignUsers) {
-    bar = new ProgressBar(
-      "Assigning users to teams... [:bar] :current/:total",
+    bar = new ProgressBar("Assigning users to teams... [:bar] :current/:total :percent :etas",
       { total: users.length }
     );
 
